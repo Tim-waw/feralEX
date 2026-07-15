@@ -1,0 +1,10 @@
+#mill
+/out
+
+#mac
+.DS_Store
+
+#dev
+/.bsp
+/.metals
+/.vscode

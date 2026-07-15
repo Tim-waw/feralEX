@@ -1,0 +1,21 @@
+package build
+import mill.*, scalalib.*, scalajslib.*
+import mill.api.Task.Simple
+import mill.scalajslib.api.ModuleKind
+
+object feralEX extends ScalaJSModule {
+  def scalaVersion: Simple[String] = "3.3.7"
+  def scalaJSVersion: Simple[String] = "1.21.0"
+
+  def mvnDeps = Seq(
+    mvn"org.typelevel::azure-functions::0.3.1-87-865e874-20260715T022727Z-SNAPSHOT",
+    mvn"org.http4s::http4s-server::0.23.33",
+    mvn"org.http4s::http4s-dsl::0.23.23"
+  )
+
+  override def moduleKind: Simple[ModuleKind] = ModuleKind.ESModule
+
+  object test extends ScalaJSTests, TestModule.Utest {
+    override def utestVersion: Simple[String] = "0.8.9"
+  }
+}
