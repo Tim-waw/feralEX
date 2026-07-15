@@ -8,3 +8,6 @@
 /.bsp
 /.metals
 /.vscode
+
+#package
+/myPackage/src/functions/main.js
