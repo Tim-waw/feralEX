@@ -1,14 +1,16 @@
 package build
 import mill.*, scalalib.*, scalajslib.*
+import mill.api.BuildCtx
 import mill.api.Task.Simple
-import mill.scalajslib.api.ModuleKind
+import mill.scalajslib.api.ModuleKind 
 
 object feralEX extends ScalaJSModule {
   def scalaVersion: Simple[String] = "3.3.7"
   def scalaJSVersion: Simple[String] = "1.21.0"
 
   def mvnDeps = Seq(
-    mvn"org.typelevel::azure-functions::0.3.1-87-865e874-20260715T022727Z-SNAPSHOT",
+    //puls the latest snapshot from local maven repo
+    mvn"org.typelevel::azure-functions::latest.integration", 
     mvn"org.http4s::http4s-server::0.23.33",
     mvn"org.http4s::http4s-dsl::0.23.23"
   )
@@ -17,5 +19,60 @@ object feralEX extends ScalaJSModule {
 
   object test extends ScalaJSTests, TestModule.Utest {
     override def utestVersion: Simple[String] = "0.8.9"
+  }
+
+  def localClean(): Command[Unit] = Task.Command(exclusive = true) {
+    val outDir = BuildCtx.workspaceRoot / "out" / "feralEX"
+    if os.exists(outDir) then os.remove.all(outDir)
+  }
+
+  def moveJS() = Task.Command {
+
+    val jsDir = fastLinkJS().dest.path
+    val functionsDir = BuildCtx.workspaceRoot / "myPackage" / "src" / "functions"
+
+    os.makeDir.all(functionsDir)
+    os.copy.over(
+      jsDir / "main.js",
+      functionsDir / "main.js",
+      followLinks = true,
+      replaceExisting = true,
+      copyAttributes = true,
+      createFolders = true
+    )
+  }
+
+  def zipFunctionApp() = Task.Command {
+    moveJS()()
+
+    val pkgDir = BuildCtx.workspaceRoot / "myPackage"
+    val zipFile = pkgDir / "functionapp.zip"
+
+    if os.exists(zipFile) then os.remove(zipFile)
+
+    os.proc(
+      "zip",
+      "-r",
+      "functionapp.zip",
+      "host.json",
+      "package.json",
+      "package-lock.json",
+      "src",
+      "node_modules",
+      "-x",
+      "local.settings.json",
+      ".vscode/*",
+      ".git/*"
+    ).call(
+      cwd = pkgDir,
+      stdout = os.Inherit,
+      stderr = os.Inherit
+    )
+  }
+
+  def fastBuild() = Task.Command {
+    localClean()()
+    compile()
+    zipFunctionApp()()
   }
 }

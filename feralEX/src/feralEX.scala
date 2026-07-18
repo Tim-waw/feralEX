@@ -13,7 +13,7 @@ import cats.effect.kernel.Resource
 import feral.functions.IOAzureHttpFunction
 import feral.functions.facade.InvocationContext
 
-object feralEX3 extends IOAzureHttpFunction {
+object feralEX extends IOAzureHttpFunction {
   override def buildHttpApp(context: InvocationContext): Resource[IO, HttpApp[IO]] = 
     val app = HttpRoutes
       .of[IO] {
